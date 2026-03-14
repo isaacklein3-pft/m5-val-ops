@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M5 Live Validator Operations and Orchestration Layer</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e3a5f;
+    --accent: #0ea5e9;
+    --accent2: #6366f1;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --mono: 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', serif;
+    font-size: 15px;
+    line-height: 1.75;
+    padding: 0;
+  }
+  .cover {
+    background: linear-gradient(135deg, #0a0e1a 0%, #0f1e35 50%, #0a1628 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 48px 48px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: radial-gradient(ellipse at 70% 40%, rgba(14,165,233,0.06) 0%, transparent 70%);
+  }
+  .cover-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .cover h1 {
+    font-size: 32px;
+    font-weight: normal;
+    line-height: 1.25;
+    color: #fff;
+    max-width: 680px;
+    margin-bottom: 12px;
+  }
+  .cover h1 span { color: var(--accent); }
+  .cover-subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 560px;
+    margin-bottom: 32px;
+  }
+  .cover-badges {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+  }
+  .badge-blue { background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); color: var(--accent); }
+  .badge-purple { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); color: var(--accent2); }
+  .badge-green { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: var(--accent3); }
+  .badge-warn { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); color: var(--warn); }
+  .container { max-width: 900px; margin: 0 auto; padding: 0 48px 80px; }
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin: 40px 0;
+  }
+  .toc-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; color: var(--muted); font-size: 14px; }
+  .toc a { color: var(--text); text-decoration: none; }
+  .toc a:hover { color: var(--accent); }
+  .section { margin: 48px 0; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-size: 22px;
+    font-weight: normal;
+    color: #fff;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  h3 {
+    font-size: 16px;
+    color: var(--accent);
+    font-weight: normal;
+    margin: 28px 0 12px;
+    font-family: var(--mono);
+    letter-spacing: 0.5px;
+  }
+  h4 {
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 8px;
+    font-family: var(--mono);
+  }
+  p { margin-bottom: 14px; color: var(--text); }
+  .lead {
+    font-size: 16px;
+    color: #c8d8e8;
+    line-height: 1.8;
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin-bottom: 24px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: rgba(30,58,95,0.15); }
+  code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: rgba(14,165,233,0.1);
+    border: 1px solid rgba(14,165,233,0.2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+  pre {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #a8c7e8;
+  }
+  .callout {
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+  .callout-info { background: rgba(14,165,233,0.08); border-left: 3px solid var(--accent); }
+  .callout-warn { background: rgba(245,158,11,0.08); border-left: 3px solid var(--warn); }
+  .callout-danger { background: rgba(239,68,68,0.08); border-left: 3px solid var(--danger); }
+  .callout-green { background: rgba(16,185,129,0.08); border-left: 3px solid var(--accent3); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-info strong { color: var(--accent); }
+  .callout-warn strong { color: var(--warn); }
+  .callout-danger strong { color: var(--danger); }
+  .callout-green strong { color: var(--accent3); }
+  .threshold-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .threshold-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px;
+  }
+  .threshold-card .metric {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .threshold-card .value {
+    font-family: var(--mono);
+    font-size: 22px;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .threshold-card .desc {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .threshold-card.warn { border-color: rgba(245,158,11,0.3); }
+  .threshold-card.warn .value { color: var(--warn); }
+  .threshold-card.danger { border-color: rgba(239,68,68,0.3); }
+  .threshold-card.danger .value { color: var(--danger); }
+  .escalation-flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .flow-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(30,58,95,0.4);
+  }
+  .flow-step:last-child { border-bottom: none; }
+  .flow-num {
+    background: var(--accent);
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .flow-num.warn { background: var(--warn); }
+  .flow-num.danger { background: var(--danger); }
+  .flow-content { flex: 1; }
+  .flow-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .flow-label.warn { color: var(--warn); }
+  .flow-label.danger { color: var(--danger); }
+  .state-bar {
+    display: flex;
+    gap: 4px;
+    margin: 20px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .state-seg {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .state-seg.active { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--accent3); }
+  .state-seg.watch { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: var(--warn); }
+  .state-seg.soft { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #ff8080; }
+  .state-seg.hard { background: rgba(239,68,68,0.25); border: 1px solid rgba(239,68,68,0.6); color: var(--danger); }
+  .ocp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .ocp-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+  }
+  .ocp-panel-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ocp-panel ul { list-style: none; padding: 0; }
+  .ocp-panel li {
+    font-size: 13.5px;
+    color: var(--muted);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(30,58,95,0.3);
+  }
+  .ocp-panel li:last-child { border-bottom: none; }
+  .ocp-panel li span { color: var(--text); }
+  .formula-block {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .formula-title {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .formula-line { color: #c8e6ff; margin: 6px 0; }
+  .formula-comment { color: #4a7090; }
+  .appendix {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 28px 32px;
+    margin: 32px 0;
+  }
+  .appendix-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .footer {
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+    padding: 24px 0 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+  ul.spec-list {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0;
+  }
+  ul.spec-list li {
+    padding: 6px 0 6px 20px;
+    position: relative;
+    color: var(--text);
+    font-size: 14px;
+    border-bottom: 1px solid rgba(30,58,95,0.2);
+  }
+  ul.spec-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--mono);
+  }
+  ul.spec-list li:last-child { border-bottom: none; }
+  .version-block {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin: 16px 0;
+    color: var(--muted);
+  }
+  .version-block span { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-meta">Post Fiat Network — Superstructure Validator Platform — Phase M5</div>
+  <h1>M5 Live Validator Operations and <span>Orchestration Layer</span></h1>
+  <p class="cover-subtitle">Operational architecture for automated health scoring, telemetry anomaly detection, OCP fleet management, and escalation path governance across live validator nodes.</p>
+  <div class="cover-badges">
+    <span class="badge badge-blue">SPECIFICATION</span>
+    <span class="badge badge-purple">M5 PHASE</span>
+    <span class="badge badge-green">SUPERSTRUCTURE VALIDATOR PLATFORM</span>
+    <span class="badge badge-warn">LIVE OPERATIONS</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="version-block">
+    <span>Document:</span> M5-OPS-ARCH-001 &nbsp;&nbsp;
+    <span>Status:</span> SPECIFICATION — NETWORK REVIEW &nbsp;&nbsp;
+    <span>Phase:</span> M5 Live Validator Operations &nbsp;&nbsp;
+    <span>Issued:</span> March 2026
+  </div>
+
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#s1">Executive Summary</a></li>
+      <li><a href="#s2">Automated Health Scoring Thresholds and Telemetry Anomaly Detection</a></li>
+      <li><a href="#s3">Orchestration Control Plane Fleet Management Interface</a></li>
+      <li><a href="#s4">Escalation Paths and Soft-Failover Architecture</a></li>
+      <li><a href="#s5">Operational Integration with M3/M4 Infrastructure</a></li>
+      <li><a href="#appendix-a">Appendix A: Threshold Reference Table</a></li>
+      <li><a href="#appendix-b">Appendix B: OCP State Machine Transitions</a></li>
+      <li><a href="#appendix-c">Appendix C: Telemetry Payload Schema</a></li>
+    </ol>
+  </div>
+
+  <!-- SECTION 1 -->
+  <div class="section" id="s1">
+    <div class="section-label">Section 01</div>
+    <h2>Executive Summary</h2>
+
+    <p class="lead">M5 defines the operational layer that governs live validator nodes once they are registered and active on the Post Fiat Superstructure. Where M3 established the static architecture and M4 validated readiness, M5 specifies the continuous runtime systems that monitor node health, detect anomalies, coordinate fleet management, and execute graduated response protocols without requiring human intervention for routine degradation events.</p>
+
+    <p>The M5 architecture is organized around a single operational principle: every response to node degradation must be proportional, reversible, and auditable. The Orchestration Control Plane does not treat all failures equally. A transient latency spike and a sustained telemetry blackout require different responses — and this specification defines both the thresholds that distinguish them and the escalation paths that govern what happens next.</p>
+
+    <p>This document covers four operational domains: automated health scoring with sustain windows to prevent false-positive failovers; telemetry anomaly detection with typed anomaly classifications; the OCP fleet management interface and its data visualization requirements; and the full escalation ladder from initial degradation detection through soft-failover to hard failover, including recovery paths at each stage.</p>
+
+    <div class="callout callout-info">
+      <strong>Architecture Continuity</strong>
+      This specification is a downstream implementation of the Superstructure Validator Routing Logic (M3) and the Failover and Routing Stress Test (M4). All Composite Routing Score weights, failover SLAs, signature scheme parameters, and zero-custody constraints established in prior phases remain in force. This document extends those foundations into live operational procedure.
+    </div>
+  </div>
+
+  <!-- SECTION 2 -->
+  <div class="section" id="s2">
+    <div class="section-label">Section 02</div>
+    <h2>Automated Health Scoring Thresholds and Telemetry Anomaly Detection</h2>
+
+    <h3>2.1 Composite Routing Score Architecture</h3>
+
+    <p>Every active operator node carries a Composite Routing Score (CRS) that the OCP recalculates every 60 seconds from four telemetry inputs. The CRS is the primary operational signal — routing weight, escalation state, and failover decisions all derive from it.</p>
+
+    <div class="formula-block">
+      <div class="formula-title">CRS Formula</div>
+      <div class="formula-line">CRS = (VI_score × 0.40) + (uptime_24h × 0.30) + (latency_score × 0.20) + (telemetry_freshness × 0.10)</div>
+      <div class="formula-comment" style="margin-top:12px;">Component Derivations:</div>
+      <div class="formula-line">VI_score         = Verified Inference reliability index [0.00–1.00]</div>
+      <div class="formula-line">uptime_24h       = (slots_attested / slots_eligible) over rolling 24h window</div>
+      <div class="formula-line">latency_score    = max(0, 1 - (p95_latency_ms / 400)) — floored at 0 above 400ms</div>
+      <div class="formula-line">telemetry_fresh  = 1.00 if last beacon &lt; 30s ago; 0.00 if beacon gap &gt; 90s</div>
+    </div>
+
+    <p>CRS outputs a continuous value between 0.00 and 1.00. The OCP operates on normalized CRS but threshold triggers are expressed as percentages (CRS × 100) throughout this document for operational readability.</p>
+
+    <h3>2.2 Health State Zones</h3>
+
+    <p>The CRS range is divided into four non-overlapping health state zones. Zone assignment determines which monitoring mode and response protocol applies to the node.</p>
+
+    <div class="threshold-grid">
+      <div class="threshold-card">
+        <div class="metric">NOMINAL</div>
+        <div class="value">≥ 70</div>
+        <div class="desc">Full routing weight. Standard monitoring interval. No operator alert.</div>
+      </div>
+      <div class="threshold-card warn">
+        <div class="metric">WATCH</div>
+        <div class="value">60–69</div>
+        <div class="desc">Reduced weight by 30%. Operator alert triggered. Sustain window active.</div>
+      </div>
+      <div class="threshold-card warn">
+        <div class="metric">DEGRADED</div>
+        <div class="value">40–59</div>
+        <div class="desc">Weight reduced 60%. Soft-failover preparation begins. Escalation timer active.</div>
+      </div>
+      <div class="threshold-card danger">
+        <div class="metric">CRITICAL</div>
+        <div class="value">&lt; 40</div>
+        <div class="desc">Immediate routing exclusion. Hard-failover authorized. Recovery requires ceremony.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-warn">
+      <strong>Hysteresis Requirement</strong>
+      Transitions between adjacent zones require the CRS to sustain the new zone value for at least two consecutive 60-second scoring cycles before the zone assignment updates. This prevents oscillation between zones during transient fluctuations. A single below-threshold score does not change zone assignment.
+    </div>
+
+    <h3>2.3 Sustain Windows and False-Positive Prevention</h3>
+
+    <p>Each alert condition has a sustain window — a minimum duration during which the condition must persist before the OCP acts on it. Sustain windows exist specifically to prevent false-positive escalations triggered by transient network events, momentary latency spikes, or brief telemetry gaps that resolve without intervention.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Condition</th>
+          <th>Raw Trigger Value</th>
+          <th>Sustain Window</th>
+          <th>Poll Count Required</th>
+          <th>Action on Confirm</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>CRS enters Watch zone</td>
+          <td>CRS 60–69</td>
+          <td>120 seconds</td>
+          <td>2 of 2 cycles</td>
+          <td>WATCH state, -30% weight, operator alert</td>
+        </tr>
+        <tr>
+          <td>CRS enters Degraded zone</td>
+          <td>CRS 40–59</td>
+          <td>120 seconds</td>
+          <td>2 of 2 cycles</td>
+          <td>DEGRADED state, -60% weight, soft-failover prep</td>
+        </tr>
+        <tr>
+          <td>CRS enters Critical zone</td>
+          <td>CRS &lt; 40</td>
+          <td>60 seconds</td>
+          <td>1 of 1 cycles</td>
+          <td>CRITICAL state, full routing exclusion</td>
+        </tr>
+        <tr>
+          <td>p95 latency elevated</td>
+          <td>&gt; 400ms</td>
+          <td>60 seconds</td>
+          <td>1 of 1 cycles</td>
+          <td>Latency anomaly flag, CRS penalty applied</td>
+        </tr>
+        <tr>
+          <td>Telemetry beacon gap</td>
+          <td>&gt; 30s no beacon</td>
+          <td>60 seconds</td>
+          <td>1 of 1 cycles</td>
+          <td>Telemetry anomaly, freshness score drops to 0.50</td>
+        </tr>
+        <tr>
+          <td>Telemetry blackout</td>
+          <td>&gt; 90s no beacon</td>
+          <td>0 seconds</td>
+          <td>Immediate</td>
+          <td>Telemetry score to 0.00, BLACKOUT anomaly triggered</td>
+        </tr>
+        <tr>
+          <td>VI score degraded</td>
+          <td>VI &lt; 0.60</td>
+          <td>120 seconds</td>
+          <td>2 of 2 cycles</td>
+          <td>VI anomaly flag, Degraded zone entry if CRS follows</td>
+        </tr>
+        <tr>
+          <td>maintenanceDeclared flag</td>
+          <td>Operator-set</td>
+          <td>0 seconds</td>
+          <td>Immediate</td>
+          <td>Routing weight zeroed, MAINTENANCE mode, no CRS penalty</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>The sustain window mechanism works as follows: when a threshold condition is first observed, the OCP creates a pending alert record with a timestamp. It does not act on the condition. At the next scoring cycle, if the condition still holds, the sustain window logic checks elapsed time. If the sustain duration has been met, the alert is confirmed and the associated action fires. If the condition has cleared during the window, the pending alert is discarded and no action is taken.</p>
+
+    <div class="callout callout-info">
+      <strong>Three-Poll Buffer Rationale (Critical Zone Exception)</strong>
+      Critical zone entry requires only a single confirmed cycle because the CRS value below 40 represents a compound failure: multiple scoring inputs have degraded simultaneously. At that failure depth, sustain windows provide false assurance rather than false-positive protection. The 60-second window at critical allows a single scoring cycle to complete without creating a meaningful delay in protective response. Watch and Degraded zones use two-cycle confirmation because individual component fluctuations can push CRS below 70 or 60 transiently without indicating systemic degradation.
+    </div>
+
+    <h3>2.4 Telemetry Anomaly Detection</h3>
+
+    <p>The OCP classifies telemetry anomalies into five typed categories. Each type has a detection mechanism, a confirmation threshold, and a named anomaly identifier that appears in operator alerts and the audit log.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Anomaly Type</th>
+          <th>Identifier</th>
+          <th>Detection Mechanism</th>
+          <th>Confirmation</th>
+          <th>Impact</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Telemetry Gap</td>
+          <td><code>ANOM_TEL_GAP</code></td>
+          <td>Beacon interval &gt; 30s</td>
+          <td>60s sustained</td>
+          <td>Freshness score 0.50, watch flag</td>
+        </tr>
+        <tr>
+          <td>Telemetry Blackout</td>
+          <td><code>ANOM_TEL_BLACKOUT</code></td>
+          <td>Beacon interval &gt; 90s</td>
+          <td>Immediate on detection</td>
+          <td>Freshness score 0.00, escalation trigger</td>
+        </tr>
+        <tr>
+          <td>Latency Spike</td>
+          <td><code>ANOM_LAT_SPIKE</code></td>
+          <td>p95 latency &gt; 400ms</td>
+          <td>60s sustained</td>
+          <td>Latency score floors to 0.00</td>
+        </tr>
+        <tr>
+          <td>VI Degradation</td>
+          <td><code>ANOM_VI_DEGRADE</code></td>
+          <td>VI score &lt; 0.60</td>
+          <td>120s sustained</td>
+          <td>CRS penalty, escalation if compound</td>
+        </tr>
+        <tr>
+          <td>Slot Attestation Miss</td>
+          <td><code>ANOM_SLOT_MISS</code></td>
+          <td>3+ consecutive missed slots</td>
+          <td>Immediate on third miss</td>
+          <td>Uptime score revision, watch flag</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Compound anomalies — where two or more typed anomalies are active simultaneously — trigger an automatic escalation path review regardless of the current CRS zone. If <code>ANOM_TEL_BLACKOUT</code> coincides with <code>ANOM_VI_DEGRADE</code>, the OCP treats this as a Critical-priority event and bypasses Watch and Degraded zone transitions entirely, proceeding directly to Critical state assessment.</p>
+
+    <h3>2.5 Anomaly Decay and Auto-Resolution</h3>
+
+    <p>Anomaly flags are not permanent. Each anomaly has an auto-resolution condition: when the underlying metric returns to nominal range and remains there for a defined resolution window, the anomaly flag clears automatically and the CRS recalculates using current inputs. The node may transition back through Degraded and Watch zones before returning to Nominal, following the same two-cycle sustain requirement in reverse.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Anomaly</th>
+          <th>Resolution Condition</th>
+          <th>Resolution Window</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ANOM_TEL_GAP</code></td>
+          <td>Beacon interval returns to &lt; 20s</td>
+          <td>60s sustained</td>
+        </tr>
+        <tr>
+          <td><code>ANOM_TEL_BLACKOUT</code></td>
+          <td>Beacon received and subsequent gap &lt; 30s</td>
+          <td>120s sustained</td>
+        </tr>
+        <tr>
+          <td><code>ANOM_LAT_SPIKE</code></td>
+          <td>p95 latency &lt; 300ms</td>
+          <td>120s sustained</td>
+        </tr>
+        <tr>
+          <td><code>ANOM_VI_DEGRADE</code></td>
+          <td>VI score returns to &gt; 0.70</td>
+          <td>120s sustained</td>
+        </tr>
+        <tr>
+          <td><code>ANOM_SLOT_MISS</code></td>
+          <td>10 consecutive successful attestations</td>
+          <td>N/A (count-based)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 3 -->
+  <div class="section" id="s3">
+    <div class="section-label">Section 03</div>
+    <h2>Orchestration Control Plane Fleet Management Interface</h2>
+
+    <h3>3.1 OCP Interface Architecture</h3>
+
+    <p>The Orchestration Control Plane Fleet Management Interface (OCP-FMI) is the operator-facing surface through which fleet health, routing weights, anomaly states, and escalation status are monitored and controlled. The OCP-FMI is a read-heavy interface: operators observe state and acknowledge alerts, but the OCP executes routing changes autonomously. Direct operator override of routing weights is restricted to MAINTENANCE mode declarations.</p>
+
+    <div class="ocp-grid">
+      <div class="ocp-panel">
+        <div class="ocp-panel-title">Primary Display Panels</div>
+        <ul>
+          <li><span>Fleet Health Overview</span> — aggregate CRS heatmap, state zone distribution</li>
+          <li><span>Node Detail View</span> — per-node CRS, component scores, active anomalies</li>
+          <li><span>Routing Weight Distribution</span> — live weight allocation across active nodes</li>
+          <li><span>Escalation Queue</span> — nodes in Watch/Degraded/Critical with timer status</li>
+          <li><span>Anomaly Event Log</span> — typed anomaly history with timestamps and resolution status</li>
+          <li><span>Signing Ceremony Queue</span> — pending ceremony actions required for node recovery</li>
+        </ul>
+      </div>
+      <div class="ocp-panel">
+        <div class="ocp-panel-title">Operator Control Actions</div>
+        <ul>
+          <li><span>Declare Maintenance Mode</span> — zero routing weight, no CRS penalty, signed ceremony required to exit</li>
+          <li><span>Acknowledge Alert</span> — log operator awareness, does not alter OCP behavior</li>
+          <li><span>Request Manual Failover Review</span> — elevates node to permanent removal consideration (MANUAL path)</li>
+          <li><span>View Escalation History</span> — full audit trail for any node since activation</li>
+          <li><span>Export Telemetry Report</span> — operator-scoped data export for external review</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>3.2 Data Visualization Requirements</h3>
+
+    <p>The OCP-FMI must present fleet data in a way that allows operators to distinguish between momentary anomalies and sustained degradation at a glance. The following visualization requirements define the minimum display standard for the interface.</p>
+
+    <h4>Fleet Health Heatmap</h4>
+    <ul class="spec-list">
+      <li>Each node represented as a tile, color-coded by health zone: green (Nominal), amber (Watch), orange (Degraded), red (Critical), grey (Maintenance)</li>
+      <li>Tile brightness scales with CRS value within zone — a CRS of 68 renders differently from a CRS of 61 within the Watch band</li>
+      <li>Tiles pulse with a slow animation when a sustain window is active but not yet confirmed, indicating pending state change</li>
+      <li>Click on any tile expands to Node Detail View</li>
+    </ul>
+
+    <h4>CRS Time-Series Chart</h4>
+    <ul class="spec-list">
+      <li>Per-node view showing CRS value over rolling 24-hour window, updated every 60 seconds</li>
+      <li>Horizontal zone threshold lines rendered at CRS values 70, 60, and 40</li>
+      <li>Anomaly events plotted as vertical markers on the time axis with anomaly identifier tooltip</li>
+      <li>Routing weight overlaid as a secondary shaded area beneath the CRS line</li>
+      <li>Failover events marked with a distinct icon and linked to the escalation log entry</li>
+    </ul>
+
+    <h4>Escalation Queue Panel</h4>
+    <ul class="spec-list">
+      <li>Sorted by urgency: Critical nodes first, then Degraded (sorted by time-in-zone descending), then Watch</li>
+      <li>Each row shows: node ID, current CRS, health zone, time in current zone, active anomaly codes, next escalation action and ETA</li>
+      <li>Countdowns rendered in seconds for Critical nodes, minutes for Degraded and Watch</li>
+      <li>Acknowledged alerts shown with operator ID and acknowledgment timestamp</li>
+    </ul>
+
+    <h4>Routing Weight Distribution</h4>
+    <ul class="spec-list">
+      <li>Real-time donut or stacked bar showing current routing weight share across all ACTIVE operators</li>
+      <li>Maximum single-operator weight ceiling of 60% rendered as a hard limit line — auto-visualization makes concentration risk visible</li>
+      <li>Historical weight distribution overlay available for comparison against current state</li>
+    </ul>
+
+    <h3>3.3 OCP Scoring Cycle Mechanics</h3>
+
+    <p>The OCP runs a deterministic 60-second scoring cycle. The cycle sequence is fixed so alert evaluation and routing updates cannot race against each other within a cycle.</p>
+
+    <pre>Cycle T+0:   Collect telemetry inputs from all active nodes
+Cycle T+5s:  Compute component scores (VI, uptime, latency, freshness)
+Cycle T+10s: Compute CRS for each node
+Cycle T+15s: Evaluate zone transitions against sustain window history
+Cycle T+20s: Confirm or discard pending alerts
+Cycle T+25s: Execute routing weight updates for confirmed state changes
+Cycle T+30s: Broadcast weight update to active middleware instances (SLA: within 30s of trigger)
+Cycle T+35s: Write cycle results to audit log
+Cycle T+60s: Next cycle begins</pre>
+
+    <div class="callout callout-info">
+      <strong>Atomic Weight Update</strong>
+      Routing weight redistribution at T+25s is executed as a single atomic operation across all nodes in the affected group. Partial updates — where some nodes receive the new weight before others — are rejected. If the atomic write fails, the OCP retains the previous weight distribution and flags the cycle as a write-error event in the audit log. The next cycle will retry the update.
+    </div>
+
+    <h3>3.4 Fleet Minimum Viability Constraint</h3>
+
+    <p>The OCP enforces a hard floor of two active operators at all times, consistent with the minimum set in prior phases. If a failover event would reduce the active operator count below two, the OCP halts the failover execution, flags the event as <code>ERR_FLEET_MIN_VIOLATION</code>, and escalates immediately to a MANUAL review path requiring human operator decision. The failing node is placed in a zero-weight holding state rather than full deregistration until the human review resolves.</p>
+  </div>
+
+  <!-- SECTION 4 -->
+  <div class="section" id="s4">
+    <div class="section-label">Section 04</div>
+    <h2>Escalation Paths and Soft-Failover Architecture</h2>
+
+    <h3>4.1 Node Operational State Machine</h3>
+
+    <p>Every node moves through a defined set of operational states. State transitions are governed by CRS thresholds, sustain window confirmations, and operator declarations. The state machine has no cycles that can trap a node indefinitely — every degraded state has a defined recovery path.</p>
+
+    <div class="state-bar">
+      <div class="state-seg active">ACTIVE</div>
+      <div class="state-seg watch">WATCH</div>
+      <div class="state-seg soft">SOFT_FAILOVER</div>
+      <div class="state-seg hard">HARD_FAILOVER</div>
+    </div>
+
+    <p>Additional states: <code>MAINTENANCE</code> (operator-declared, reversible without ceremony), <code>RECOVERY</code> (node has exited hard failover and is rebuilding score), and <code>DEREGISTERED</code> (permanent removal, requires signing ceremony to re-enter).</p>
+
+    <h3>4.2 Full Escalation Path Specification</h3>
+
+    <div class="escalation-flow">
+
+      <div class="flow-step">
+        <div class="flow-num">1</div>
+        <div class="flow-content">
+          <div class="flow-label">INITIAL DETECTION — WATCH STATE ENTRY</div>
+          <p style="font-size:13.5px; margin-bottom:0;">CRS falls into Watch zone (60–69) and sustains for two consecutive 60-second cycles (120 seconds total). OCP confirms zone transition, reduces routing weight by 30%, and emits <code>ALERT_WATCH_ENTRY</code> to the Operator Notification Bus. The node remains in active service at reduced weight. No signing ceremony is required or triggered. The operator is expected to acknowledge the alert within 15 minutes — acknowledgment is logged but does not change OCP behavior.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num">2</div>
+        <div class="flow-content">
+          <div class="flow-label">ESCALATION — DEGRADED STATE ENTRY</div>
+          <p style="font-size:13.5px; margin-bottom:0;">If CRS further declines into the Degraded zone (40–59) and sustains for two cycles, the OCP transitions the node to DEGRADED state. Routing weight is reduced by 60% from nominal. A Soft-Failover Preparation flag is set, meaning the OCP begins pre-positioning load redistribution across remaining ACTIVE operators so that if a soft-failover fires, the weight reassignment can complete within the 30-second SLA. The operator receives <code>ALERT_DEGRADED_ENTRY</code> with a 10-minute escalation timer visible in the OCP-FMI escalation queue.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num" class="warn">3</div>
+        <div class="flow-content">
+          <div class="flow-label warn">SOFT FAILOVER — LOAD REDISTRIBUTION WITHOUT DEREGISTRATION</div>
+          <p style="font-size:13.5px; margin-bottom:0;">If a node in DEGRADED state has not recovered to Watch or Nominal after three consecutive 60-second cycles in Degraded (180 seconds of sustained degradation), the OCP executes a Soft Failover. In Soft Failover, the node's routing weight is set to zero and all traffic is redistributed to remaining ACTIVE operators. Critically, the node is NOT deregistered. It is placed in a <code>SOFT_FAILOVER</code> holding state and continues to receive telemetry monitoring. It remains eligible for automatic recovery: if the CRS recovers above 60 and sustains for two cycles, the node re-enters the ACTIVE routing pool with a graduated weight ramp — 20% initial weight, increasing by 10% per cycle as CRS remains above 70, up to the pre-failover allocation ceiling.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-num danger">4</div>
+        <div class="flow-content">
+          <div class="flow-label danger">HARD FAILOVER — ROUTING EXCLUSION AND DEREGISTRATION</div>
+          <p style="font-size:13.5px; margin-bottom:0;">Hard failover fires when one or more of the following conditions occur: CRS falls below 40 and sustains for one 60-second cycle; telemetry blackout (<code>ANOM_TEL_BLACKOUT</code>) persists for 90 seconds; compound anomalies of types <code>ANOM_TEL_BLACKOUT</code> and <code>ANOM_VI_DEGRADE</code> are simultaneously active; or <code>ERR_FLEET_MIN_VIOLATION</code> is resolved in favor of removal via MANUAL review. Hard failover is an AUTO-authorized action — no operator confirmation is required before execution. The node is immediately removed from the routing pool, its weight redistributed atomically, and an <code>ERR_HARD_FAILOVER</code> event is written to the audit log. The failover SLA from trigger detection to weight update broadcast is 30 seconds. Recovery from hard failover requires a signing ceremony to re-register the node on the network.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>4.3 Soft Failover vs. Hard Failover Decision Matrix</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Condition</th>
+          <th>CRS Range</th>
+          <th>Duration Required</th>
+          <th>Action</th>
+          <th>Ceremony Required</th>
+          <th>Authorization</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Watch zone entry</td>
+          <td>60–69</td>
+          <td>120s sustained</td>
+          <td>-30% weight, alert</td>
+          <td>No</td>
+          <td>AUTO</td>
+        </tr>
+        <tr>
+          <td>Degraded zone entry</td>
+          <td>40–59</td>
+          <td>120s sustained</td>
+          <td>-60% weight, prep</td>
+          <td>No</td>
+          <td>AUTO</td>
+        </tr>
+        <tr>
+          <td>Sustained Degraded (no recovery)</td>
+          <td>40–59</td>
+          <td>180s in Degraded</td>
+          <td>Soft Failover (zero weight, node held)</td>
+          <td>No</td>
+          <td>AUTO</td>
+        </tr>
+        <tr>
+          <td>Critical zone entry</td>
+          <td>&lt; 40</td>
+          <td>60s (1 cycle)</td>
+          <td>Hard Failover</td>
+          <td>Yes (to recover)</td>
+          <td>AUTO</td>
+        </tr>
+        <tr>
+          <td>Telemetry Blackout</td>
+          <td>Any</td>
+          <td>90s no beacon</td>
+          <td>Hard Failover</td>
+          <td>Yes (to recover)</td>
+          <td>AUTO</td>
+        </tr>
+        <tr>
+          <td>Fleet minimum risk</td>
+          <td>Any</td>
+          <td>Immediate detection</td>
+          <td>MANUAL review hold</td>
+          <td>Context-dependent</td>
+          <td>MANUAL</td>
+        </tr>
+        <tr>
+          <td>Operator permanent removal</td>
+          <td>Any</td>
+          <td>On MANUAL decision</td>
+          <td>Hard Failover, deregistration</td>
+          <td>Yes</td>
+          <td>MANUAL</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.4 Recovery Paths</h3>
+
+    <p>Recovery paths vary by the state a node exited from. Nodes that self-recovered from Watch or Degraded re-enter with no weight penalty and no ceremony requirement. Nodes that were soft-failed over re-enter via the graduated ramp described in Section 4.2. Nodes that were hard-failed over require a full signing ceremony to re-register, after which they enter RECOVERY state and are treated as new nodes for routing weight allocation purposes, starting at the minimum allocation floor.</p>
+
+    <div class="callout callout-green">
+      <strong>Zero-Custody Constraint on Recovery</strong>
+      The signing ceremony required for hard-failover recovery follows the same four-step process established in M3: envelope delivery to institution, mandatory human verification inside custody, signing inside custody, broadcast. The private key does not cross the custody boundary at any point. The recovery ceremony is initiated by middleware constructing the unsigned re-registration payload — not by the operator. This preserves zero-custody architecture through the recovery workflow as well as the initial activation workflow.
+    </div>
+
+    <h3>4.5 Escalation Notification Obligations</h3>
+
+    <p>The Operator Notification Bus must deliver escalation alerts within 60 seconds of the OCP confirming the triggering condition. Delivery failure (no acknowledgment from the Notification Bus within 30 seconds of dispatch) triggers a retry with exponential backoff: 30s, 60s, 120s. After three failed delivery attempts, the OCP logs an <code>ERR_ALERT_DELIVERY_FAIL</code> event but continues to execute routing changes autonomously. Escalation actions do not wait for alert delivery confirmation.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Alert Code</th>
+          <th>Trigger Condition</th>
+          <th>Operator Required Response</th>
+          <th>Response Window</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ALERT_WATCH_ENTRY</code></td>
+          <td>CRS enters Watch zone</td>
+          <td>Acknowledge; investigate root cause</td>
+          <td>15 minutes</td>
+        </tr>
+        <tr>
+          <td><code>ALERT_DEGRADED_ENTRY</code></td>
+          <td>CRS enters Degraded zone</td>
+          <td>Acknowledge; begin remediation</td>
+          <td>10 minutes</td>
+        </tr>
+        <tr>
+          <td><code>ALERT_SOFT_FAILOVER</code></td>
+          <td>Soft-failover executed</td>
+          <td>Acknowledge; document cause; remediate</td>
+          <td>30 minutes</td>
+        </tr>
+        <tr>
+          <td><code>ALERT_HARD_FAILOVER</code></td>
+          <td>Hard-failover executed</td>
+          <td>Acknowledge; initiate recovery procedure; report to network</td>
+          <td>60 minutes</td>
+        </tr>
+        <tr>
+          <td><code>ALERT_FLEET_MIN</code></td>
+          <td>Fleet minimum risk detected</td>
+          <td>Participate in MANUAL review decision</td>
+          <td>30 minutes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 5 -->
+  <div class="section" id="s5">
+    <div class="section-label">Section 05</div>
+    <h2>Operational Integration with M3/M4 Infrastructure</h2>
+
+    <h3>5.1 Continuity with Prior Phase Specifications</h3>
+
+    <p>M5 Live Operations does not introduce new cryptographic primitives, custody models, or routing architectures. It operates within the constraints established across M2 through M4 and extends them into runtime behavior. The following established parameters govern M5 operations without modification.</p>
+
+    <ul class="spec-list">
+      <li>Signature scheme: Ed25519 over canonical JSON (RFC 8785) — applies to all signing ceremonies including recovery ceremonies</li>
+      <li>Ceremony envelope freshness window: 120 seconds — applies to recovery ceremony envelopes constructed by middleware</li>
+      <li>Nonce retention period: 30 days minimum — applies to recovery ceremony nonces as with initial registration</li>
+      <li>Replay protection error: <code>ERR_NONCE_REPLAY</code> — fired on duplicate nonce in any ceremony type</li>
+      <li>Role model: Maker / Checker / Reviewer — applies to recovery ceremony authorization inside institution custody</li>
+      <li>Maximum single-operator routing weight: 60% — enforced by OCP weight distribution logic, visible in OCP-FMI</li>
+      <li>Minimum active operators: 2 — enforced by <code>ERR_FLEET_MIN_VIOLATION</code> gate before any hard-failover execution</li>
+      <li>Failover SLA: 30 seconds from confirmed trigger to weight update broadcast — applies to both soft and hard failover events</li>
+    </ul>
+
+    <h3>5.2 Verified Inference Integration</h3>
+
+    <p>Verified Inference (VI) scores are produced by the Post Fiat network's inference reliability system and are consumed by the OCP as one of four CRS inputs. M5 operations treat VI scores as an external input signal — the OCP does not modify or override VI scores. When VI scores indicate degradation (<code>ANOM_VI_DEGRADE</code>), the OCP responds through the standard anomaly and escalation framework without contacting or adjusting the VI system directly.</p>
+
+    <p>The relationship between VI score degradation and network participation probability is governed by the Verified Inference model, not by the OCP. The OCP's role is to translate VI score trends into routing weight adjustments and escalation decisions that protect the network from relying heavily on a node whose inference reliability is declining before that decline reaches a hard threshold in the VI system itself.</p>
+
+    <h3>5.3 Audit Log Requirements</h3>
+
+    <p>Every OCP action — scoring cycle result, state transition, alert dispatch, weight update, failover execution, recovery event — must be written to an immutable audit log accessible to network reviewers. The audit log is append-only and timestamped to millisecond precision. Log entries include the triggering condition, the sustain window evaluation result, the action taken, and any error codes generated.</p>
+
+    <div class="callout callout-info">
+      <strong>Network Review Access</strong>
+      The audit log is readable by authorized network reviewers without exposing private key material, operator authentication credentials, or institution-internal signing ceremony records. The log contains operational metadata only: node IDs, CRS values, timestamps, action codes, and anomaly identifiers.
+    </div>
+  </div>
+
+  <!-- APPENDIX A -->
+  <div class="appendix" id="appendix-a">
+    <div class="appendix-title">Appendix A — Threshold Reference Table</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Parameter</th>
+          <th>Value</th>
+          <th>Unit</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>CRS scoring interval</td><td>60</td><td>seconds</td><td>Fixed cycle</td></tr>
+        <tr><td>Watch zone entry (CRS)</td><td>60–69</td><td>CRS points</td><td>2-cycle sustain</td></tr>
+        <tr><td>Degraded zone entry (CRS)</td><td>40–59</td><td>CRS points</td><td>2-cycle sustain</td></tr>
+        <tr><td>Critical zone entry (CRS)</td><td>&lt; 40</td><td>CRS points</td><td>1-cycle (60s)</td></tr>
+        <tr><td>Watch zone routing penalty</td><td>-30%</td><td>weight reduction</td><td>From pre-watch allocation</td></tr>
+        <tr><td>Degraded zone routing penalty</td><td>-60%</td><td>weight reduction</td><td>From nominal allocation</td></tr>
+        <tr><td>Soft-failover time in Degraded</td><td>180</td><td>seconds</td><td>3 consecutive cycles</td></tr>
+        <tr><td>Hard-failover SLA</td><td>30</td><td>seconds</td><td>Trigger to weight broadcast</td></tr>
+        <tr><td>Max single-operator weight</td><td>60%</td><td>% of total routing</td><td>Hard ceiling</td></tr>
+        <tr><td>Minimum active operators</td><td>2</td><td>nodes</td><td>No override</td></tr>
+        <tr><td>Telemetry beacon gap threshold</td><td>30</td><td>seconds</td><td>ANOM_TEL_GAP trigger</td></tr>
+        <tr><td>Telemetry blackout threshold</td><td>90</td><td>seconds</td><td>ANOM_TEL_BLACKOUT trigger</td></tr>
+        <tr><td>p95 latency hard threshold</td><td>400</td><td>milliseconds</td><td>Latency score floors at 0</td></tr>
+        <tr><td>VI degradation threshold</td><td>0.60</td><td>VI index</td><td>2-cycle sustain</td></tr>
+        <tr><td>Slot miss trigger</td><td>3</td><td>consecutive misses</td><td>Immediate on third miss</td></tr>
+        <tr><td>Ceremony envelope freshness</td><td>120</td><td>seconds</td><td>Includes recovery ceremonies</td></tr>
+        <tr><td>Nonce retention</td><td>30</td><td>days</td><td>Minimum</td></tr>
+        <tr><td>Alert delivery retry backoff</td><td>30 / 60 / 120</td><td>seconds</td><td>Three attempts maximum</td></tr>
+        <tr><td>Recovery weight ramp initial</td><td>20%</td><td>% of final allocation</td><td>Post soft-failover re-entry</td></tr>
+        <tr><td>Recovery weight ramp increment</td><td>+10%</td><td>per cycle</td><td>While CRS &gt; 70</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- APPENDIX B -->
+  <div class="appendix" id="appendix-b">
+    <div class="appendix-title">Appendix B — OCP State Machine Transitions</div>
+    <pre>State: ACTIVE
+  → WATCH          if CRS &lt; 70 for 2 cycles (120s)
+  → MAINTENANCE    if maintenanceDeclared = true (immediate)
+  → CRITICAL       if CRS &lt; 40 for 1 cycle (60s) — bypasses Watch/Degraded
+
+State: WATCH
+  → ACTIVE         if CRS ≥ 70 for 2 cycles (auto-recovery)
+  → DEGRADED       if CRS &lt; 60 for 2 cycles (120s)
+  → MAINTENANCE    if maintenanceDeclared = true
+
+State: DEGRADED
+  → WATCH          if CRS 60–69 for 2 cycles (partial recovery)
+  → ACTIVE         if CRS ≥ 70 for 2 cycles (full recovery)
+  → SOFT_FAILOVER  if 3 consecutive cycles in DEGRADED (180s) with no recovery
+  → HARD_FAILOVER  if ANOM_TEL_BLACKOUT + ANOM_VI_DEGRADE compound (immediate)
+
+State: SOFT_FAILOVER
+  → ACTIVE(ramp)   if CRS ≥ 60 for 2 cycles — graduated weight ramp
+  → HARD_FAILOVER  if CRS &lt; 40 for 1 cycle while in SOFT_FAILOVER
+
+State: HARD_FAILOVER
+  → RECOVERY       after signing ceremony completes (operator re-registration)
+
+State: RECOVERY
+  → ACTIVE         after 3 consecutive cycles with CRS ≥ 70
+
+State: MAINTENANCE
+  → ACTIVE         after operator clears maintenance flag + signing ceremony exit
+
+State: DEREGISTERED
+  → (terminal)     permanent removal, requires full onboarding to return</pre>
+  </div>
+
+  <!-- APPENDIX C -->
+  <div class="appendix" id="appendix-c">
+    <div class="appendix-title">Appendix C — Telemetry Payload Schema</div>
+    <pre>{
+  "node_id":              "string — unique node identifier",
+  "cycle_ts":             "ISO 8601 timestamp — scoring cycle timestamp",
+  "beacon_ts":            "ISO 8601 timestamp — last telemetry beacon received",
+  "beacon_gap_s":         "integer — seconds since last beacon",
+  "vi_score":             "float [0.00–1.00] — Verified Inference reliability index",
+  "uptime_24h":           "float [0.00–1.00] — 24h attestation rate",
+  "p95_latency_ms":       "integer — p95 latency in milliseconds",
+  "slots_eligible":       "integer — slots eligible in scoring window",
+  "slots_attested":       "integer — slots successfully attested",
+  "consecutive_misses":   "integer — current consecutive slot miss count",
+  "crs_current":          "float [0.00–1.00] — computed CRS this cycle",
+  "crs_prior":            "float [0.00–1.00] — CRS from previous cycle",
+  "health_zone":          "enum [NOMINAL, WATCH, DEGRADED, CRITICAL]",
+  "active_anomalies":     "array of anomaly identifiers",
+  "routing_weight":       "float [0.00–1.00] — current routing allocation share",
+  "op_state":             "enum [ACTIVE, WATCH, DEGRADED, SOFT_FAILOVER, HARD_FAILOVER, MAINTENANCE, RECOVERY, DEREGISTERED]",
+  "maintenance_declared": "boolean",
+  "pending_alert":        "string | null — alert code if sustain window active",
+  "sustain_window_start": "ISO 8601 | null — when pending condition first observed"
+}</pre>
+  </div>
+
+  <div class="footer">
+    <span>M5-OPS-ARCH-001 | Post Fiat Superstructure Validator Platform</span>
+    <span>NETWORK REVIEW DRAFT | March 2026</span>
+  </div>
+
+</div>
+</body>
+</html>
